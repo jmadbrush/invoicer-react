@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Invoicer - Get Paid With React</title>
+  </head>
+  <body>
+
+    <div id="content">
+    </div>
+
+    <link rel="stylesheet" href="css/invoicer.css">
+
+    <script src="lib/react.js"></script>
+    <script src="lib/react-dom.js"></script>
+    <script src="lib/browser.js"></script>
+
+    <script type="text/babel" >
+    
+    var InvoiceIdentity = React.createClass({
+      render: function(){
+        return(
+          <div className="invoiceIdentity">
+              <h1>Invoice</h1>
+          </div>
+        )
+      },
+    });
+
+    var InvoiceMeta = React.createClass({
+      render: function(){
+        return(
+          <div className="invoiceMeta">
+              <h2 className="businessName">Business Name</h2>
+          </div>
+        )
+      },
+    });
+    
+    var PaymentInfo = React.createClass({
+      render: function(){
+        return(
+          <div className="paymentInfo">
+              <span>Add payment method</span>
+          </div>
+        )
+      },
+    });
+
+    var ClientInfo = React.createClass({
+      render: function(){
+        return(
+          <div className="clientInfo">
+              <strong>Bill To:</strong>
+          </div>
+        )
+      },
+    });
+
+    var LineItems = React.createClass({
+      render: function(){
+        return(
+          <div className="lineItems">
+              Item
+          </div>
+        )
+      },
+    });
+
+
+    var Invoice = React.createClass({
+      render: function(){
+        return(
+          <div className="invoice" >
+            <InvoiceIdentity />
+            <InvoiceMeta />
+            <PaymentInfo />
+            <ClientInfo />
+            <LineItems />
+          </div>
+        )
+      },
+    });
+
+    ReactDOM.render(
+      <Invoice />,
+      document.getElementById('content')
+    );
+
+    </script>
+
+  </body>
+</html>
