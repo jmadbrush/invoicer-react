@@ -46,6 +46,7 @@
         render: function(){
           return (
             <div className="paymentInfo">
+              <div><strong>Payment: </strong></div>
               <input type="text" placeholder="Add payment method" />
             </div>
           );
@@ -70,7 +71,24 @@
 
       });
 
-      var LineItems = React.createClass({
+     var LineItems = React.createClass({
+
+        getInitialState: function(){
+          return {
+            lineItems: [
+                          {item: 'Gather user stories', rate: 120, qty: 5 },
+                          {item: 'Program new JS site', rate: 120, qty: 10 },
+                          {item: 'Test new JS site', rate: 120, qty: 10 }
+                        ],
+          };
+        },
+
+        updateLineItem: function(idx, field, value){
+          var liCopy = this.state.lineItems.slice();
+          liCopy[idx][field] = value;
+
+          this.setState({lineItems: liCopy});
+        },
 
         render: function(){
           return (
@@ -79,8 +97,14 @@
               <span className="rate heading">Rate($)</span>
               <span className="qty heading">Qty</span>
               <span className="total heading">Total($)</span>
-              <LineItem item="Program new JS site" rate={120.00} qty={10} total={1200.00}/>
-              <LineItem />
+              {
+                this.state.lineItems.map((function(lineItem, idx){
+                  return <LineItem key={idx} idx={idx} item={lineItem['item']} 
+                            rate={lineItem['rate']} qty={lineItem['qty']} 
+                            updateFn={this.updateLineItem}/>
+                
+                }).bind(this))
+              }
               <Totals />
             </div>
           );
@@ -106,13 +130,25 @@
           total: React.PropTypes.number,
         },
 
+        handleItemChange: function(e){
+          this.props.updateFn(this.props.idx, 'item', e.target.value);
+        },
+
+        handleRateChange: function(e){
+          this.props.updateFn(this.props.idx, 'rate', parseFloat(e.target.value));
+        },
+
+        handleQtyChange: function(e){
+          this.props.updateFn(this.props.idx, 'qty', parseFloat(e.target.value));
+        },
+
         render: function(){
           return (
             <div className="lineItem">
-              <input type="text" className="item" placeholder="New item" value={this.props.item} />
-              <input type="text" className="rate" placeholder="0.00" value={this.props.rate} />
-              <input type="text" className="qty" placeholder="0.0" value={this.props.qty} />
-              <input type="text" className="total" placeholder="0.00" value={this.props.total} />
+              <input type="text" className="item" placeholder="New item" value={this.props.item} onChange={this.handleItemChange} />
+              <input type="text" className="rate" placeholder="0.00" value={this.props.rate} onChange={this.handleRateChange} />
+              <input type="text" className="qty" placeholder="0.0" value={this.props.qty} onChange={this.handleQtyChange} />
+              <span className="total">{this.props.rate * this.props.qty}</span>
             </div>
           );
         },
