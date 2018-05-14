@@ -11,7 +11,7 @@
 
     <link rel="stylesheet" href="css/invoicer.css">
 
-    <script src="lib/react.js"></script>
+    <script src="lib/react-with-addons.js"></script>
     <script src="lib/react-dom.js"></script>
     <script src="lib/browser.js"></script>
 
@@ -28,11 +28,18 @@
       });
 
       var InvoiceMeta = React.createClass({
+        mixins: [React.addons.LinkedStateMixin],
+
+        getInitialState: function(){
+          return{
+            bizName: "Business Name",
+          };
+        },
 
         render: function(){
           return(
             <div className="invoiceMeta">
-              <input type="text" className="businessName" placeholder="Business Name" />
+              <input type="text" className="businessName" valueLink={this.linkState('bizName')} />
               <label>Issue Date: <input type="text" placeholder="DD.MM.YYYY" /></label>
               <label>Due Date: <input type="text" placeholder="DD.MM.YYYY" /></label>
               <label>Invoice #: <input type="text" placeholder="YYYY-nnnn" /></label>
@@ -46,7 +53,7 @@
         render: function(){
           return (
             <div className="paymentInfo">
-              <div><strong>Payment: </strong></div>
+              <div><strong>Payment:</strong></div>
               <input type="text" placeholder="Add payment method" />
             </div>
           );
@@ -71,15 +78,14 @@
 
       });
 
-     var LineItems = React.createClass({
+      var LineItems = React.createClass({
 
         getInitialState: function(){
           return {
+            showNew: false,
             lineItems: [
-                          {item: 'Gather user stories', rate: 120, qty: 5 },
-                          {item: 'Program new JS site', rate: 120, qty: 10 },
-                          {item: 'Test new JS site', rate: 120, qty: 10 }
-                        ],
+                        {item: null, rate: 0, qty: 0},
+                      ],
           };
         },
 
@@ -87,25 +93,70 @@
           var liCopy = this.state.lineItems.slice();
           liCopy[idx][field] = value;
 
+          if( idx == this.state.lineItems.length-1 ){
+            liCopy.push([{item: null, rate:0, qty:0}]);
+          }
+
           this.setState({lineItems: liCopy});
+        },
+
+        deleteLineItem: function(idx){
+
+          var finalLi;
+          if( this.state.lineItems.length == 1 ){
+            finalLi = [];
+            finalLi[0] = {item: null, rate: 0, qty: 0};
+          } else {
+            var liCopyPre = this.state.lineItems.slice(0, idx);
+            var liCopyPost = this.state.lineItems.slice(idx+1);
+            finalLi = liCopyPre.concat(liCopyPost);
+          }
+
+          this.setState({lineItems: finalLi});
+        },
+
+        showNew: function(){
+          this.setState({showNew: true});
+        },
+
+        hideNew: function(e){
+          var ele = e.toElement || e.relatedTarget;
+          if( !ele || ele.className.indexOf('liData') >= 0 ){
+            return;
+          }
+
+          this.setState({showNew: false});
         },
 
         render: function(){
           return (
-            <div className="lineItems">
+            <div className="lineItems"
+                 onMouseOver={this.showNew}
+                 onMouseOut={this.hideNew} >
               <span className="item heading">Item</span>
               <span className="rate heading">Rate($)</span>
               <span className="qty heading">Qty</span>
               <span className="total heading">Total($)</span>
               {
                 this.state.lineItems.map((function(lineItem, idx){
-                  return <LineItem key={idx} idx={idx} item={lineItem['item']} 
-                            rate={lineItem['rate']} qty={lineItem['qty']} 
-                            updateFn={this.updateLineItem}/>
-                
+                  var maxIdx = this.state.lineItems.length-1;
+
+                  if( idx < maxIdx ) {
+                    return <LineItem key={idx} idx={idx} item={lineItem['item']}
+                            rate={lineItem['rate']} qty={lineItem['qty']}
+                            updateFn={this.updateLineItem}
+                            delFn={this.deleteLineItem} />
+                  }
+
+                  if( maxIdx == 0 || (idx == maxIdx && this.state.showNew) ){
+                    return <LineItem key={idx} idx={idx}
+                            updateFn={this.updateLineItem} 
+                            delFn={this.deleteLineItem} />
+                  }
+
                 }).bind(this))
               }
-              <Totals />
+              <Totals lineItems={this.state.lineItems} />
             </div>
           );
         },
@@ -116,7 +167,7 @@
 
         getDefaultProps: function(){
           return {
-            item: null, 
+            item: null,
             rate: null,
             qty: null,
             total: null,
@@ -128,6 +179,12 @@
           rate: React.PropTypes.number,
           qty: React.PropTypes.number,
           total: React.PropTypes.number,
+        },
+
+        getInitialState: function(){
+          return {
+            showX: false,
+          };
         },
 
         handleItemChange: function(e){
@@ -142,31 +199,84 @@
           this.props.updateFn(this.props.idx, 'qty', parseFloat(e.target.value));
         },
 
+        deleteRow: function(){
+          this.props.delFn(this.props.idx);
+        },
+
+        showX: function(){
+          this.setState({showX: true});
+        },
+
+        hideX: function(e){
+          var ele = e.toTarget || e.relatedTarget;
+          if( !ele || ele.className.indexOf('delRow') >= 0 ) {
+            return;
+          }
+
+          this.setState({showX: false});
+        },
+
         render: function(){
           return (
-            <div className="lineItem">
-              <input type="text" className="item" placeholder="New item" value={this.props.item} onChange={this.handleItemChange} />
-              <input type="text" className="rate" placeholder="0.00" value={this.props.rate} onChange={this.handleRateChange} />
-              <input type="text" className="qty" placeholder="0.0" value={this.props.qty} onChange={this.handleQtyChange} />
-              <span className="total">{this.props.rate * this.props.qty}</span>
+            <div className="lineItem" 
+                 onMouseOver={this.showX}
+                 onMouseOut={this.hideX} >
+              <input type="text" className="liData item" placeholder="New item" value={this.props.item} onChange={this.handleItemChange} />
+              <input type="text" className="liData rate" placeholder="0.00" value={this.props.rate} onChange={this.handleRateChange} />
+              <input type="text" className="liData qty" placeholder="0.0" value={this.props.qty} onChange={this.handleQtyChange} />
+              <span className="liData total" >{this.props.qty * this.props.rate}</span>
+
+              {
+                this.state.showX ? <div className="delRow" onClick={this.deleteRow} >X</div>
+                                 : null
+              }
             </div>
           );
         },
       });
 
       var Totals = React.createClass({
+        mixins: [React.addons.LinkedStateMixin],
+
+        getDefaultProps: function(){
+          return {
+            lineItems: [],
+          };
+        },
+
+        getInitialState: function(){
+          return {
+            tax: 0,
+          };
+        },
+
+        calcSubTotal: function(){
+          var lsub = 0;
+          this.props.lineItems.map((function(li, idx){
+            lsub += ( this.zeroDef(li['rate']) * this.zeroDef(li['qty']) );
+          }).bind(this));
+
+          return lsub;
+        },
+
+        zeroDef: function(val){
+          if( !val || isNaN(val) ){ return 0 }
+          return val;
+        },
+
         render: function(){
           return (
             <div className="totals">
               <div className="totalLabel">Sub-total:</div>
-              <span className="subtotal totalValue numeric">0.00</span>
+              <span className="subtotal totalValue numeric">{this.calcSubTotal()}</span>
 
               <div className="totalLabel">Tax:</div>
-              <input className="tax numeric" type="text" placeholder="0.0" />
+              <input className="tax numeric" type="text" placeholder="0.0" valueLink={this.linkState('tax')}/>
               <span>%</span>
 
               <div className="totalLabel finalTotal">Total:</div>
-              <span className="totalValue finalTotal numeric">0.00</span>
+              <span className="totalValue finalTotal numeric">{
+                parseFloat(this.calcSubTotal() + (this.calcSubTotal() * (this.state.tax / 100) )) }</span>
             </div>
           );
         },
